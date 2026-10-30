@@ -17,13 +17,19 @@ class ACGameModeBase : public AGameModeBase
 public:
 	virtual APlayerController* SpawnPlayerController(ENetRole InRemoteRole, const FString& Options) override;
 	virtual void StartPlay() override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
 	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
 
 private:
 	FGenericTeamId GetTeamIDForPlayer(const AController* InController) const;
 
-	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const;
+	// Reserves the next unused PlayerStart with this team's tag.
+	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID);
+
+	// Weak keys: the GameMode can survive seamless travel, and we must not keep
+	// PlayerStart actors from the old world alive through a strong UPROPERTY set.
+	TSet<TWeakObjectPtr<AActor>> UsedStartSpots;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Team")
 	TSubclassOf<APawn> BackupPawn;

@@ -60,6 +60,23 @@ UClass* ACGameModeBase::GetDefaultPawnClassForController_Implementation(AControl
 	return BackupPawn;
 }
 
+AActor* ACGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
+{
+	if (!Player)
+	{
+		return Super::ChoosePlayerStart_Implementation(Player);
+	}
+
+	const FGenericTeamId TeamId = GetTeamIDForPlayer(Player);
+	if (AActor* TeamStart = FindNextStartSpotForTeam(TeamId))
+	{
+		return TeamStart;
+	}
+
+	// 队伍点已经用完（或没有配置）时才退回默认逻辑。
+	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
 APawn* ACGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
 {
 	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayer);
@@ -69,9 +86,20 @@ APawn* ACGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer
 		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
 	}
 
-	// 优先复用 Controller 上已经分配好的出生点；没有的话只选一次。
-	// 这样不会在 SpawnPlayerController 和这里各消耗一次 PlayerStart。
-	AActor* TeamSpot = NewPlayer->StartSpot.Get();
+	// 只有 Tag 匹配当前队伍、并且已经被 ChoosePlayerStart 预留过的点才复用。
+	// 这样 Minion 用的无 Tag APlayerStart 不会被当成玩家出生点。
+	AActor* TeamSpot = nullptr;
+	if (const FName* TeamTag = TeamStartSpotTagMap.Find(TeamId))
+	{
+		if (APlayerStart* ExistingStart = Cast<APlayerStart>(NewPlayer->StartSpot.Get()))
+		{
+			const TWeakObjectPtr<AActor> ExistingKey(ExistingStart);
+			if (ExistingStart->PlayerStartTag == *TeamTag && UsedStartSpots.Contains(ExistingKey))
+			{
+				TeamSpot = ExistingStart;
+			}
+		}
+	}
 	if (!IsValid(TeamSpot))
 	{
 		TeamSpot = FindNextStartSpotForTeam(TeamId);
@@ -102,6 +130,8 @@ APawn* ACGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer
 	}
 
 	NewPlayer->StartSpot = StartSpot;
+	UE_LOG(LogTemp, Warning, TEXT("[SpawnDefaultPawnFor] %s Team=%d StartSpot=%s"),
+		*GetNameSafe(NewPlayer), TeamId.GetId(), *GetNameSafe(StartSpot));
 	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
 }
 
@@ -131,7 +161,7 @@ FGenericTeamId ACGameModeBase::GetTeamIDForPlayer(const AController* InControlle
     return FGenericTeamId(PlayerCount % 2);
 }
 
-AActor* ACGameModeBase::FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const
+AActor* ACGameModeBase::FindNextStartSpotForTeam(const FGenericTeamId& TeamID)
 {
     const FName* StartSpotTag = TeamStartSpotTagMap.Find(TeamID);
     if (!StartSpotTag)
@@ -143,9 +173,10 @@ AActor* ACGameModeBase::FindNextStartSpotForTeam(const FGenericTeamId& TeamID) c
 
     for(TActorIterator<APlayerStart> It(World); It; ++It)
     {
-        if (It->PlayerStartTag == *StartSpotTag)
+        const TWeakObjectPtr<AActor> SpotKey(*It);
+        if (It->PlayerStartTag == *StartSpotTag && !UsedStartSpots.Contains(SpotKey))
         {
-            It->PlayerStartTag = FName("Taken");
+            UsedStartSpots.Add(SpotKey);
             return *It;
         }
     }
