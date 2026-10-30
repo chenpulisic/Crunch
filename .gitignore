@@ -1,0 +1,16 @@
+# Unreal generated / local
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+.vs/
+Content/
+dsh-acl-recovery/
+
+# Local user files
+*.user
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
