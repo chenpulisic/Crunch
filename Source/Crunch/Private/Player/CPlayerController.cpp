@@ -14,7 +14,9 @@ void ACPlayerController::OnPossess(APawn* NewPawn)
 	CPlayerCharacter = Cast<ACPlayerCharacter>(NewPawn);
 	if (CPlayerCharacter)
 	{
-		CPlayerCharacter->ServeSideInit();
+		// ServeSideInit 已经在 ACCharacter::PossessedBy 里调用过了：
+		// Super::OnPossess 内部会先执行 Pawn->PossessedBy(this)。
+		// 这里再调一次会让 GiveInitialAbilities / ApplyInitialEffects 重复执行。
 		CPlayerCharacter->SetGenericTeamId(TeamID);
 	}
 }
