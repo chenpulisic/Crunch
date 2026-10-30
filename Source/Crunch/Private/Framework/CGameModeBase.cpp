@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
+#include "Framework/CGameInstance.h"
 #include "Framework/StormCore.h"
 #include "Player/CPlayerController.h"
 #include "Player/CPlayerState.h"
@@ -19,8 +20,8 @@ APlayerController* ACGameModeBase::SpawnPlayerController(ENetRole InRemoteRole, 
         NewPlayerTeamInterface->SetGenericTeamId(TeamId);
     }
 
-    NewPlayerController->StartSpot = FindNextStartSpotForTeam(TeamId);
-
+    // 不在这里消耗 PlayerStart：此时 PlayerState 可能还没就绪，
+    // 选人/队伍信息也不完整。等 SpawnDefaultPawnFor 里再按最终 TeamId 选。
     return NewPlayerController;
 }
 
@@ -41,6 +42,21 @@ UClass* ACGameModeBase::GetDefaultPawnClassForController_Implementation(AControl
 	{
 		return CPlayerState->GetSelectedPawnClass();
 	}
+
+	// Hard travel（PIE 默认）会重建 PlayerState，选人结果从 GameInstance 的缓存里取。
+	if (CPlayerState)
+	{
+		if (UCGameInstance* CGameInstance = Cast<UCGameInstance>(GetGameInstance()))
+		{
+			if (TSubclassOf<APawn> CachedPawnClass = CGameInstance->FindCachedPawnClass(CPlayerState->GetPlayerName()))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[PawnClass] Cached %s for %s"),
+					*GetNameSafe(CachedPawnClass), *CPlayerState->GetPlayerName());
+				return CachedPawnClass;
+			}
+		}
+	}
+
 	return BackupPawn;
 }
 
@@ -95,6 +111,19 @@ FGenericTeamId ACGameModeBase::GetTeamIDForPlayer(const AController* InControlle
 	if (CPlayerState && CPlayerState->GetSelectedPawnClass())
 	{
 		return CPlayerState->GetTeamIdBasedOnSlot();
+	}
+
+	// Hard travel 下 PlayerState 的 PlayerSelection 会丢，从 GameInstance 的缓存取队伍。
+	if (CPlayerState)
+	{
+		if (UCGameInstance* CGameInstance = Cast<UCGameInstance>(GetGameInstance()))
+		{
+			FGenericTeamId CachedTeam = CGameInstance->FindCachedTeam(CPlayerState->GetPlayerName());
+			if (CachedTeam != FGenericTeamId::NoTeam)
+			{
+				return CachedTeam;
+			}
+		}
 	}
 
     static int PlayerCount = 0;
