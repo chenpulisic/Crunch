@@ -52,10 +52,41 @@ APawn* ACGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer
 	{
 		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
 	}
-	StartSpot = FindNextStartSpotForTeam(TeamId);
-	NewPlayer->StartSpot = StartSpot;
 
-	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot) ;
+	// 优先复用 Controller 上已经分配好的出生点；没有的话只选一次。
+	// 这样不会在 SpawnPlayerController 和这里各消耗一次 PlayerStart。
+	AActor* TeamSpot = NewPlayer->StartSpot.Get();
+	if (!IsValid(TeamSpot))
+	{
+		TeamSpot = FindNextStartSpotForTeam(TeamId);
+	}
+	if (IsValid(TeamSpot))
+	{
+		StartSpot = TeamSpot;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SpawnDefaultPawnFor] No team start for %s (Team=%d), fallback to any PlayerStart"),
+			*GetNameSafe(NewPlayer), TeamId.GetId());
+	}
+
+	// 再兜底：RestartPlayer 传进来的点，或者地图里任意一个 PlayerStart。
+	if (!IsValid(StartSpot))
+	{
+		StartSpot = FindPlayerStart(NewPlayer);
+	}
+
+	// AGameModeBase::SpawnDefaultPawnFor_Implementation 内部直接调用
+	// StartSpot->GetActorRotation()，不会判空；nullptr 会在这里崩。
+	if (!IsValid(StartSpot))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SpawnDefaultPawnFor] No valid PlayerStart for %s (Team=%d)"),
+			*GetNameSafe(NewPlayer), TeamId.GetId());
+		return nullptr;
+	}
+
+	NewPlayer->StartSpot = StartSpot;
+	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
 }
 
 FGenericTeamId ACGameModeBase::GetTeamIDForPlayer(const AController* InController) const
