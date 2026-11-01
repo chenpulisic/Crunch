@@ -14,3 +14,6 @@ dsh-acl-recovery/
 *.sdf
 *.VC.db
 *.VC.opendb
+# 本地笔记 / Debug 报告，不入库
+*Debug报告*.md
+面试考点_*.md
