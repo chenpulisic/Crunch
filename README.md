@@ -12,7 +12,7 @@
 
 ## 项目简介
 
-Crunch 是一个以 Dota 类玩法为目标的多人项目：双方各 5 名英雄，配兵线、防御塔核心（`AStormCore`）、商店与装备合成，流程从 Lobby 选人无缝进入对局。
+Crunch 是一个以 MOBA类玩法为目标的多人项目：双方各 5 名英雄，配兵线、防御塔核心（`AStormCore`）、商店与装备合成，流程从 Lobby 选人无缝进入对局。
 
 代码规模约 **160 个源文件、9,900 行 C++**，按职责拆成 9 个模块：
 
@@ -70,7 +70,7 @@ flowchart LR
 ### 1. 技能系统（GAS）
 
 - `UCGameplayAbility` 作为所有技能的基类，统一封装了瞄准拾取（`GetAimTarget`）、球形扫掠命中判定（`GetHitResultFromSweepLocationTargetData`）、击退（`PushSelf` / `PushTargets`）、蒙太奇控制以及**基于阵营的敌我过滤**（`IsActorTeamAttitudeIs`）。
-- 技能按输入槽位注册：`ECAbilityInputID` 定义了 `BasicAttack`、`Aim`、`AbilityOne` … `AbilitySix`、`Confirm`、`Cancel`，`UCAbilitySystemComponent` 内部用 `TMap<ECAbilityInputID, TSubclassOf<UGameplayAbility>>` 存放**技能**与**基础能力**两套映射。
+- 技能按输入槽位注册：`ECAbilityInputID` 定义了 `BasicAttack`、`Aim`、`AbilityOne` … `AbilityThree`、`Confirm`、`Cancel`，`UCAbilitySystemComponent` 内部用 `TMap<ECAbilityInputID, TSubclassOf<UGameplayAbility>>` 存放**技能**与**基础能力**两套映射。
 - 技能升级走服务端 RPC，客户端收到等级刷新后再更新 UI：
 
 ```cpp
@@ -191,7 +191,7 @@ Crunch/
   - `Content/` 约 4.1 GB，远超 GitHub 的单文件 100 MB 与仓库建议的 1 GB 上限；
   - 其余为编译产物与本地缓存，可由源码重建。
 - 因此本仓库的定位是**代码作品集**：可以直接阅读 GAS 接入方式、网络 RPC 设计、AI 与 UI 的组织方式。
-- 若需要可运行的完整工程，欢迎通过 Issue 或邮件联系。
+- 若需要可运行的完整工程，欢迎通过邮件联系。
 
 ## 已知限制
 
@@ -201,7 +201,3 @@ Crunch/
 ## 致谢
 
 玩法框架与技能设计参考了 Epic 官方 GAS 文档以及社区公开教程的实现思路，在此基础上完成了网络流程、AI 输入通道、背包商店与 UI 层的二次开发。
-
----
-
-如果这个项目对你有帮助，欢迎 Star ⭐
