@@ -6,6 +6,7 @@
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
 ![GAS](https://img.shields.io/badge/Gameplay%20Ability%20System-enabled-6C4AB6)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
+[![Demo](https://img.shields.io/badge/Demo-Bilibili-FB7299?logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV1Tf4w6REow)
 
 ---
 
@@ -27,6 +28,12 @@ Crunch 是一个以 Dota 类玩法为目标的多人项目：双方各 5 名英�
 | `Character/` | 4 | 角色基类、英雄定义数据资产 |
 | `NetWork/` | 2 | 网络相关的静态工具函数 |
 
+
+## 演示
+
+▶ **演示视频（Bilibili）**：<https://www.bilibili.com/video/BV1Tf4w6REow>
+
+> GitHub 不支持内嵌 B 站播放器，点击链接观看完整对局演示。
 ## 技术栈
 
 - **引擎**：Unreal Engine 5.4，C++ 模块名 `Crunch`，`Crunch.Target.cs` / `CrunchEditor.Target.cs` 双 Target
@@ -184,7 +191,7 @@ Crunch/
   - `Content/` 约 4.1 GB，远超 GitHub 的单文件 100 MB 与仓库建议的 1 GB 上限；
   - 其余为编译产物与本地缓存，可由源码重建。
 - 因此本仓库的定位是**代码作品集**：可以直接阅读 GAS 接入方式、网络 RPC 设计、AI 与 UI 的组织方式。
-- 若需要可运行的完整工程或演示视频，欢迎通过 Issue 或邮件联系。
+- 若需要可运行的完整工程，欢迎通过 Issue 或邮件联系。
 
 ## 已知限制
 
